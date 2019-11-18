@@ -7,7 +7,9 @@ with open('scope.json') as json_file:
 
     p = re.compile("[a-z]")
     for s in scope:
-    	if(s['enabled'] == True and "h1" not in s['host']):
+    	# Don't parse scopes that need to be created
+    	if(s['enabled'] == True and ("h1" not in s['host'] and "h1" not in s['file'])):
+    		#Remove escape characters and normalize scope regex
     		matchHost = decode(encode(s['host'], 'latin-1', 'backslashreplace'), 'unicode-escape')
     		matchFile = decode(encode(s['file'], 'latin-1', 'backslashreplace'), 'unicode-escape')
     		matchFile = matchFile.replace(".*.*",".*")
@@ -17,6 +19,7 @@ with open('scope.json') as json_file:
     		scopeRegex = matchHost+matchFile
     		print (scopeRegex)
 
+    		#Find number of wildcards in scope regex
     		wildcardRegex = "\\.\\*"
     		p = re.compile(wildcardRegex)
     		for m in p.finditer(scopeRegex):
