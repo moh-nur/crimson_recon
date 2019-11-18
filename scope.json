@@ -1,0 +1,66 @@
+{
+    "target": {
+        "scope": {
+            "advanced_mode": true,
+            "exclude": [],
+            "include": [
+                {
+                    "enabled": true,
+                    "file": "^//connect.*.*",
+                    "host": "^.*\\.zendesk\\.com$",
+                    "port": "^80$",
+                    "protocol": "http"
+                },
+                {
+                    "enabled": true,
+                    "file": "^//connect.*.*",
+                    "host": "^.*\\.zendesk\\.com$",
+                    "port": "^443$",
+                    "protocol": "https"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^h1-your-domain\\.zendesk\\.com$",
+                    "port": "^80$",
+                    "protocol": "http"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^h1-your-domain\\.zendesk\\.com$",
+                    "port": "^443$",
+                    "protocol": "https"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^developer\\.zendesk\\.com$",
+                    "port": "^80$",
+                    "protocol": "http"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^developer\\.zendesk\\.com$",
+                    "port": "^443$",
+                    "protocol": "https"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^www\\.zendesk\\.com$",
+                    "port": "^80$",
+                    "protocol": "http"
+                },
+                {
+                    "enabled": true,
+                    "file": "^/.*",
+                    "host": "^www\\.zendesk\\.com$",
+                    "port": "^443$",
+                    "protocol": "https"
+                }
+            ]
+        }
+    }
+}
