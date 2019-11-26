@@ -9,11 +9,14 @@ RUN apk update && apk add \
     curl \
     git \
     whois \
+    pip3 \
     vim && \
     mkdir ~/tools && \
 	wget -O ~/tools/amass.zip -P ~/tools/ https://github.com/OWASP/Amass/releases/download/${amass} && \
 	unzip ~/tools/amass.zip -d ~/tools && \
 	mv ~/tools/amass_${amass_ver}_linux_amd64 ~/tools/amass && \
 	rm ~/tools/amass.zip
+
+RUN pip3 install beautifulsoup4
 
 ENTRYPOINT ["~/tools"]
