@@ -1,38 +1,72 @@
-import json, sys , re
-from codecs import encode, decode
-from ast import literal_eval
+import sys, argparse, subprocess, pathlib
 
-#def enumerate(input):
-	
-no_regex = str.maketrans("", "", "$^\\")
-scopeList = set()
+parser = argparse.ArgumentParser()
 
-with open('scope.json') as json_file:
-	data = json.load(json_file)
-	scope = data['target']['scope']['include']
+parser.add_argument("-d", "--domain", help="Domain to perform recon on",
+                    required=True)
 
-	p = re.compile("[a-z]")
-	for s in scope:
-		# Don't parse scopes that need to be created
-		if(s['enabled'] == True and ("h1" not in s['host'] and "h1" not in s['file'])):
-			#Remove escape characters and normalize scope regex
-			matchHost = decode(encode(s['host'], 'latin-1', 'backslashreplace'), 'unicode-escape')
-			matchFile = decode(encode(s['file'], 'latin-1', 'backslashreplace'), 'unicode-escape')
-			matchFile = matchFile.replace(".*.*",".*").replace(".*.*",".*").replace("^/","\\/").replace("//","/") + "$"
-			matchHost = matchHost.replace("$","")
-			scopeRegex = matchHost+matchFile
-			#print (scopeRegex)
-			sanitized = scopeRegex.translate(no_regex)
-			sanitized = sanitized.replace(".*","<")
-			scopeList.add(s['protocol'] +"://" + sanitized)
+parser.add_argument("-i", "--inscope", help="In-scope regex file")
+parser.add_argument("-o", "--outscope", help="Out-scope regex file")
 
-#Find number of places to enumerate
-for s in scopeList:
-	print (s)
-	marker = "<"
-	p = re.compile(marker)
-	for m in p.finditer(s):
-		print(m.start(), m.group())
+args = parser.parse_args()
 
-	#sys.exit()
+print ("Parsing: " + args.domain)
 
+name = (args.domain.split("."))[0]
+
+print(name)
+print(pathlib.Path.home())
+
+amassDir = f"{str(pathlib.Path.home())}/tools/amass/"
+process = subprocess.run([f"{amassDir}amass intel -org {name}"],
+						cwd=amassDir,
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+
+asnList = process.stdout.split("\n")
+print(asnList)
+
+cidrList = list()
+domainList = list()
+
+for asn in asnList:
+	print (asn)
+	asnNumber = (asn.split(","))[0]
+
+	regEx = "([0-9.]+){4}/[0-9]+"
+	whoisCommand = f"whois -h whois.radb.net -- '-i origin {asnNumber} ' | grep -Eo \"{regEx}\" | sort -u"
+	whoProcess = subprocess.run([whoisCommand],
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+
+	cidrArray = whoProcess.stdout.split("\n")
+	cidrList += cidrArray
+
+	amassProcess = subprocess.run([f"{amassDir}amass intel -asn {asnNumber}"],
+						cwd=amassDir,
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+	asnDomainList = amassProcess.stdout.split("\n")
+	domainList += asnDomainList
+	print(asnDomainList)
+	break
+
+cidrSet = set(list(filter(None, cidrList)))
+print(cidrSet)
+
+for cidr in cidrSet:
+	amassProcess = subprocess.run([f"{amassDir}amass intel -cidr {cidr}"],
+						cwd=amassDir,
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+	cidrDomainList = amassProcess.stdout.split("\n")
+	domainList += cidrDomainList
+	print(cidrDomainList)
+	break
+
+domainSet = set(list(filter(None, domainList)))
+print(domainSet)

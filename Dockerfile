@@ -8,6 +8,7 @@ ENV amass ${amass_ver}/amass_${amass_ver}_linux_amd64.zip
 RUN apk update && apk add \
     curl \
     git \
+    whois \
     vim && \
     mkdir ~/tools && \
 	wget -O ~/tools/amass.zip -P ~/tools/ https://github.com/OWASP/Amass/releases/download/${amass} && \
