@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import pathlib
 import requests
+import re
 from bs4 import BeautifulSoup
 
 # From ghostlulz: https://github.com/ghostlulzhacks/CertificateTransparencyLogs
@@ -50,11 +51,9 @@ print ("Parsing: " + args.domain)
 
 name = (args.domain.split("."))[0]
 
-print(name)
-print(pathlib.Path.home())
-
-amassDir = f"{str(pathlib.Path.home())}/tools/amass/"
-process = subprocess.run([f"{amassDir}amass intel -org {name}"],
+print ("Retrieving ans list")
+amassDir = f"{str(pathlib.Path.home())}/tools/amass"
+process = subprocess.run([f"{amassDir}/amass intel -org {name}"],
 						cwd=amassDir,
 						shell=True,
                          stdout=subprocess.PIPE, 
@@ -66,6 +65,7 @@ print(asnList)
 cidrList = list()
 domainList = list()
 
+print ("Retrieving cidr for each asn found")
 for asn in asnList:
 	print (asn)
 	asnNumber = (asn.split(","))[0]
@@ -80,7 +80,7 @@ for asn in asnList:
 	cidrArray = whoProcess.stdout.split("\n")
 	cidrList += cidrArray
 
-	amassProcess = subprocess.run([f"{amassDir}amass intel -asn {asnNumber}"],
+	amassProcess = subprocess.run([f"{amassDir}/amass intel -asn {asnNumber}"],
 						cwd=amassDir,
 						shell=True,
                          stdout=subprocess.PIPE, 
@@ -93,8 +93,9 @@ for asn in asnList:
 cidrSet = set(list(filter(None, cidrList)))
 print(cidrSet)
 
+print ("Retrieving subdomains for each cidr")
 for cidr in cidrSet:
-	amassProcess = subprocess.run([f"{amassDir}amass intel -cidr {cidr}"],
+	amassProcess = subprocess.run([f"{amassDir}/amass intel -cidr {cidr}"],
 						cwd=amassDir,
 						shell=True,
                          stdout=subprocess.PIPE, 
@@ -112,6 +113,20 @@ for domain in domainSet:
 	crtsh = crtShClass(domain)
 	crtsh.run()
 	subdomainList += crtsh.foundURLsList
+
+print ("Brute forcing domain names")
+wordlistFolder = f"{str(pathlib.Path.home())}/wordlists"
+process = subprocess.run([f"gobuster dns -d {args.domain} -z -q -w {wordlistFolder}/subdomains-top1million-5000.txt"],
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+
+gobustedSubdomains = process.stdout.split("\n")
+print (gobustedSubdomains)
+for goDomain in gobustedSubdomains:
+	m = re.search('Found: (.*)', goDomain)
+	if m:
+		subdomainList.append(m.group(1))
 
 subdomainSet = set(list(filter(None, subdomainList)))
 print(subdomainSet)
