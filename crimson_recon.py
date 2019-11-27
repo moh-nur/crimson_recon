@@ -114,7 +114,16 @@ for domain in domainSet:
 	crtsh.run()
 	subdomainList += crtsh.foundURLsList
 
-print ("Brute forcing domain names")
+print ("passively scraping subdomains using amass enum")
+amassProcess = subprocess.run([f"{amassDir}/amass enum -passive -d {args.domain}"],
+					cwd=amassDir,
+					shell=True,
+                     stdout=subprocess.PIPE, 
+                     universal_newlines=True)
+amassSubdomainList = amassProcess.stdout.split("\n")
+subdomainList += amassSubdomainList
+
+print ("Brute forcing domain names using gobuster")
 wordlistFolder = f"{str(pathlib.Path.home())}/wordlists"
 process = subprocess.run([f"gobuster dns -d {args.domain} -z -q -w {wordlistFolder}/subdomains-top1million-5000.txt"],
 						shell=True,
