@@ -26,7 +26,6 @@ RUN apk add --no-cache --virtual .build-deps bash gcc musl-dev openssl go
 
 # Install gobuster
 RUN go get github.com/OJ/gobuster && \
-	mkdir $HOME/go && \
 	export GOPATH=$HOME/go && \
 	export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
 	mkdir ~/wordlists && \
