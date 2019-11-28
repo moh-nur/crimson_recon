@@ -4,38 +4,18 @@ import subprocess
 import pathlib
 import requests
 import re
+import os
+import time
+import datetime
 from bs4 import BeautifulSoup
 
-# From ghostlulz: https://github.com/ghostlulzhacks/CertificateTransparencyLogs
-class crtShClass():
+ts = time.time()
+sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H:%M:%S - ')
+print(f"Started crimson recon @ {sttime}")
 
-	def __init__(self,domain):
-		self.url = "https://crt.sh/?q=%25."+domain
-		self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0'}
-		self.cookies = {}
-		self.foundURLsList = []
-
-	def subdomainScrape(self):
-		r = requests.get(self.url,headers=self.headers,timeout=10)
-		soup = BeautifulSoup(r.content,'html.parser')
-
-		tableRows = soup.find_all('table')[2].find_all('tr')
-
-		for row in tableRows:
-			try:
-				subdomain = row.find_all('td')[4].text
-				subdomain = subdomain.replace("*.","")
-				if subdomain not in self.foundURLsList:
-					self.foundURLsList.append(subdomain)
-			except Exception as e:
-				pass
-
-	def run(self):
-		self.subdomainScrape()
-
-	def printSubdomains(self):
-		for subdomain in self.foundURLsList:
-			print(subdomain)
+resultsDir = f"{str(os.getcwd())}/results"
+if not os.path.exists(resultsDir):
+    os.makedirs(resultsDir)
 
 parser = argparse.ArgumentParser()
 
@@ -50,8 +30,21 @@ args = parser.parse_args()
 print ("Parsing: " + args.domain)
 
 name = (args.domain.split("."))[0]
+inscopeList = list()
+if args.inscope:
+	with open(args.inscope) as fp:
+		inscopeList += fp.read().splitlines() 
 
-print ("Retrieving ans list")
+outscopeList = list()
+if args.outscope:
+	with open(args.outscope) as fp:
+		outscopeList += fp.read().splitlines() 
+
+companyDir = f"{resultsDir}/{name}"
+if not os.path.exists(companyDir):
+    os.makedirs(companyDir)
+
+print ("Retrieving asn list")
 amassDir = f"{str(pathlib.Path.home())}/tools/amass"
 process = subprocess.run([f"{amassDir}/amass intel -org {name}"],
 						cwd=amassDir,
@@ -60,14 +53,18 @@ process = subprocess.run([f"{amassDir}/amass intel -org {name}"],
                          universal_newlines=True)
 
 asnList = process.stdout.split("\n")
-print(asnList)
+asnResults = f"{companyDir}/{name}_asns.txt"
+with open(asnResults, 'w') as f:
+    for asn in asnList:
+        f.write("%s\n" % asn)
+print(f"asn found: ==> {asnList}")
 
 cidrList = list()
 domainList = list()
 
 print ("Retrieving cidr for each asn found")
 for asn in asnList:
-	print (asn)
+	print (f"Processing asn: ==> {asn}")
 	asnNumber = (asn.split(","))[0]
 
 	regEx = "([0-9.]+){4}/[0-9]+"
@@ -86,12 +83,16 @@ for asn in asnList:
                          stdout=subprocess.PIPE, 
                          universal_newlines=True)
 	asnDomainList = amassProcess.stdout.split("\n")
-	domainList += asnDomainList
-	print(asnDomainList)
-	break
+	domainList+=asnDomainList
+	print(f"asnDomainList: ==> {asnDomainList}")
+	#break
 
 cidrSet = set(list(filter(None, cidrList)))
-print(cidrSet)
+cidrResults = f"{companyDir}/{name}_cidrs.txt"
+with open(cidrResults, 'w') as f:
+    for cidr in cidrSet:
+        f.write("%s\n" % cidr)
+print(f"cidr: ==> {cidrSet}")
 
 print ("Retrieving subdomains for each cidr")
 for cidr in cidrSet:
@@ -101,18 +102,44 @@ for cidr in cidrSet:
                          stdout=subprocess.PIPE, 
                          universal_newlines=True)
 	cidrDomainList = amassProcess.stdout.split("\n")
-	domainList += cidrDomainList
-	print(cidrDomainList)
-	break
+	domainList+=cidrDomainList
+	print(f"cidrDomainList: ==> {cidrDomainList}")
+	#break
 
 domainSet = set(list(filter(None, domainList)))
+print (f"Found domains ==> {domainSet}")
+
+if inscopeList or outscopeList:
+	print ("Filtering out of scope domains")
+	removalCandidates = list()
+	for domain in domainSet:
+		if outscopeList and not inscopeList:
+			inScope = True
+		else:
+			inScope = False
+
+		if inscopeList:
+			for scope in inscopeList:
+				m = re.search(scope, domain)
+				if m:
+					inScope = True
+					break
+
+		if outscopeList:
+			for scope in outscopeList:
+				m = re.search(scope, domain)
+				if m:
+					inScope = False
+					break
+
+		if not inScope:
+			removalCandidates.append(domain)
+	for removalDomain in removalCandidates:
+		domainSet.remove(removalDomain)
+
 print(domainSet)
 
 subdomainList = list()
-for domain in domainSet:
-	crtsh = crtShClass(domain)
-	crtsh.run()
-	subdomainList += crtsh.foundURLsList
 
 print ("passively scraping subdomains using amass enum")
 amassProcess = subprocess.run([f"{amassDir}/amass enum -passive -d {args.domain}"],
@@ -121,7 +148,7 @@ amassProcess = subprocess.run([f"{amassDir}/amass enum -passive -d {args.domain}
                      stdout=subprocess.PIPE, 
                      universal_newlines=True)
 amassSubdomainList = amassProcess.stdout.split("\n")
-subdomainList += amassSubdomainList
+subdomainList+=amassSubdomainList
 
 print ("Brute forcing domain names using gobuster")
 wordlistFolder = f"{str(pathlib.Path.home())}/wordlists"
@@ -138,5 +165,53 @@ for goDomain in gobustedSubdomains:
 		subdomainList.append(m.group(1))
 
 subdomainSet = set(list(filter(None, subdomainList)))
+print ("Found subdomains")
+if inscopeList or outscopeList:
+	print ("Filtering out of scope subdomains")
+	removalCandidates = list()
+	for domain in subdomainSet:
+		if outscopeList and not inscopeList:
+			inScope = True
+		else:
+			inScope = False
+
+		if inscopeList:
+			for scope in inscopeList:
+				m = re.search(scope, domain)
+				if m:
+					inScope = True
+					break
+
+		if outscopeList:
+			for scope in outscopeList:
+				m = re.search(scope, domain)
+				if m:
+					inScope = False
+					break
+
+		if not inScope:
+			removalCandidates.append(domain)
+	for removalDomain in removalCandidates:
+		subdomainSet.remove(removalDomain)
+
+print("Filtered subdomain list")
 print(subdomainSet)
 
+companyDir = f"{resultsDir}/{name}"
+if not os.path.exists(companyDir):
+    os.makedirs(companyDir)
+
+domainResults = f"{companyDir}/{name}_domains.txt"
+with open(domainResults, 'w') as f:
+    for domain in domainSet:
+        f.write("%s\n" % domain)
+
+subDomainResults = f"{companyDir}/{name}_subdomains.txt"
+with open(subDomainResults, 'w') as f:
+    for subdomain in subdomainSet:
+        f.write("%s\n" % subdomain)
+
+ts = time.time()
+sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H:%M:%S - ')
+with open(f"{companyDir}/{name}_lastrun.txt", 'w') as f:
+	f.write(f"{sttime}\n")
