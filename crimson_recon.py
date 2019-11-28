@@ -84,7 +84,7 @@ for asn in asnList:
                          universal_newlines=True)
 	asnDomainList = amassProcess.stdout.split("\n")
 	domainList+=asnDomainList
-	print(f"asnDomainList: ==> {asnDomainList}")
+	print(f"asnDomainList: {asn}==> {asnDomainList}")
 	#break
 
 cidrSet = set(list(filter(None, cidrList)))
@@ -103,7 +103,7 @@ for cidr in cidrSet:
                          universal_newlines=True)
 	cidrDomainList = amassProcess.stdout.split("\n")
 	domainList+=cidrDomainList
-	print(f"cidrDomainList: ==> {cidrDomainList}")
+	print(f"cidrDomainList: {cidr}==> {cidrDomainList}")
 	#break
 
 domainSet = set(list(filter(None, domainList)))
