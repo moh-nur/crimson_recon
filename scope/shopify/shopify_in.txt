@@ -1,0 +1,6 @@
+.*myshopify\.com
+accounts\.shopify\.com
+partners\.shopify\.com
+.*exchangemarketplace\.com
+.*shopify\.com
+

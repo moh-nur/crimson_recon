@@ -1,0 +1,8 @@
+.*shopify\.asia
+investors\.shopify\.com
+community\.shopify\.com
+livechat\.shopify\.com
+cdn\.shopify\.com
+.*shopify\.io
+.*email\.shopify\.com
+go\.shopify\.com

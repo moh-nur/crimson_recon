@@ -1,0 +1,4 @@
+myshopify.com
+ssl.shopify.com
+ash.shopify.com
+shopify.com
