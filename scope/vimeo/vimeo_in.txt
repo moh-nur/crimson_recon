@@ -1,0 +1,9 @@
+^.*cloud\.vimeo\.com$
+^.*vimeo\.com$
+^player\.vimeo\.com$
+^www\.vimeo\.com$
+^.*vimeo\.com$
+^api\.vimeo\.com$
+^checkout\.vimeo\.com$
+^vimeo\.magisto\.com$
+^.*vimeopro\.com$

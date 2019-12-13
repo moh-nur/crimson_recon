@@ -29,6 +29,19 @@ RUN go get github.com/OJ/gobuster && \
 	export GOPATH=$HOME/go && \
 	export PATH=$PATH:$GOROOT/bin:$GOPATH/bin && \
 	mkdir ~/wordlists && \
-	wget https://github.com/danielmiessler/SecLists/raw/master/Discovery/DNS/subdomains-top1million-5000.txt
+	wget https://github.com/danielmiessler/SecLists/raw/master/Discovery/DNS/
+	subdomains-top1million-5000.txt
+
+# Install Eyewitness
+RUN cd ~/tools && \
+	git clone https://github.com/FortyNorthSecurity/EyeWitness.git && \
+	cd ~/tools/EyeWitness/setup.py && \
+	sudo ./setup.py
+
+# Install masscan
+RUN sudo apt-get install git gcc make libpcap-dev && \
+	git clone https://github.com/robertdavidgraham/masscan ~/tools && \
+	cd ~/tools/masscan && \
+	make
 
 ENTRYPOINT ["~/tools"]
