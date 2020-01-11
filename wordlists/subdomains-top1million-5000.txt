@@ -1,0 +1,1 @@
+<html><body>You are being <a href="https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt">redirected</a>.</body></html>
