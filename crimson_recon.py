@@ -25,6 +25,7 @@ parser.add_argument("-d", "--domain", help="Domain to perform recon on",
 
 parser.add_argument("-i", "--inscope", help="In-scope regex file")
 parser.add_argument("-o", "--outscope", help="Out-scope regex file")
+parser.add_argument("-na", "--noasn", action='store_true', help="Skip ASN parsing")
 
 args = parser.parse_args()
 
@@ -45,100 +46,103 @@ companyDir = resultsDir+"/"+name
 if not os.path.exists(companyDir):
     os.makedirs(companyDir)
 
-print ("Retrieving asn list")
 amassDir = str(pathlib.Path.home())+"/tools/amass"
-process = subprocess.run([amassDir+"/amass intel -org "+name],
-						cwd=amassDir,
-						shell=True,
-                         stdout=subprocess.PIPE, 
-                         universal_newlines=True)
+if not args.noasn:
+	print ("Retrieving asn list")
+	process = subprocess.run([amassDir+"/amass intel -org "+name],
+							cwd=amassDir,
+							shell=True,
+	                         stdout=subprocess.PIPE, 
+	                         universal_newlines=True)
 
-asnList = process.stdout.split("\n")
-asnResults = companyDir+"/"+name+"_asns.txt"
-with open(asnResults, 'w') as f:
-    for asn in asnList:
-        f.write("%s\n" % asn)
-print("asn found: ==> " + str(asnList))
+	asnList = process.stdout.split("\n")
+	asnResults = companyDir+"/"+name+"_asns.txt"
+	with open(asnResults, 'w') as f:
+	    for asn in asnList:
+	        f.write("%s\n" % asn)
+	print("asn found: ==> " + str(asnList))
 
-cidrList = list()
-domainList = list()
+	cidrList = list()
+	domainList = list()
 
-print ("Retrieving cidr for each asn found")
-for asn in asnList:
-	print ("Processing asn: ==> "+asn)
-	asnNumber = (asn.split(","))[0]
+	print ("Retrieving cidr for each asn found")
+	for asn in asnList:
+		print ("Processing asn: ==> "+asn)
+		asnNumber = (asn.split(","))[0]
 
-	regEx = "([0-9.]+){4}/[0-9]+"
-	whoisCommand = "whois -h whois.radb.net -- '-i origin "+asnNumber+" ' | grep -Eo \""+regEx+"\" | sort -u"
-	whoProcess = subprocess.run([whoisCommand],
-						shell=True,
-                         stdout=subprocess.PIPE, 
-                         universal_newlines=True)
+		regEx = "([0-9.]+){4}/[0-9]+"
+		whoisCommand = "whois -h whois.radb.net -- '-i origin "+asnNumber+" ' | grep -Eo \""+regEx+"\" | sort -u"
+		whoProcess = subprocess.run([whoisCommand],
+							shell=True,
+	                         stdout=subprocess.PIPE, 
+	                         universal_newlines=True)
 
-	cidrArray = whoProcess.stdout.split("\n")
-	cidrList += cidrArray
+		cidrArray = whoProcess.stdout.split("\n")
+		cidrList += cidrArray
 
-	amassProcess = subprocess.run([amassDir+"/amass intel -asn "+asnNumber],
-						cwd=amassDir,
-						shell=True,
-                         stdout=subprocess.PIPE, 
-                         universal_newlines=True)
-	asnDomainList = amassProcess.stdout.split("\n")
-	domainList+=asnDomainList
-	print("asnDomainList: "+asn+"==> "+str(asnDomainList))
-	#break
+		amassProcess = subprocess.run([amassDir+"/amass intel -asn "+asnNumber],
+							cwd=amassDir,
+							shell=True,
+	                         stdout=subprocess.PIPE, 
+	                         universal_newlines=True)
+		asnDomainList = amassProcess.stdout.split("\n")
+		domainList+=asnDomainList
+		print("asnDomainList: "+asn+"==> "+str(asnDomainList))
+		#break
 
-cidrSet = set(list(filter(None, cidrList)))
-cidrResults = companyDir+"/"+name+"_cidrs.txt"
-with open(cidrResults, 'w') as f:
-    for cidr in cidrSet:
-        f.write("%s\n" % cidr)
-print("cidr: ==> "+str(cidrSet))
+	cidrSet = set(list(filter(None, cidrList)))
+	cidrResults = companyDir+"/"+name+"_cidrs.txt"
+	with open(cidrResults, 'w') as f:
+	    for cidr in cidrSet:
+	        f.write("%s\n" % cidr)
+	print("cidr: ==> "+str(cidrSet))
 
-print ("Retrieving subdomains for each cidr")
-for cidr in cidrSet:
-	amassProcess = subprocess.run([amassDir+"/amass intel -cidr "+cidr],
-						cwd=amassDir,
-						shell=True,
-                         stdout=subprocess.PIPE, 
-                         universal_newlines=True)
-	cidrDomainList = amassProcess.stdout.split("\n")
-	domainList+=cidrDomainList
-	print("cidrDomainList: "+cidr+"==> "+str(cidrDomainList))
-	#break
+	print ("Retrieving subdomains for each cidr")
+	for cidr in cidrSet:
+		amassProcess = subprocess.run([amassDir+"/amass intel -cidr "+cidr],
+							cwd=amassDir,
+							shell=True,
+	                         stdout=subprocess.PIPE, 
+	                         universal_newlines=True)
+		cidrDomainList = amassProcess.stdout.split("\n")
+		domainList+=cidrDomainList
+		print("cidrDomainList: "+cidr+"==> "+str(cidrDomainList))
+		#break
 
-domainSet = set(list(filter(None, domainList)))
-print ("Found domains ==> "+str(domainSet))
+	domainSet = set(list(filter(None, domainList)))
+	print ("Found domains ==> "+str(domainSet))
 
-if inscopeList or outscopeList:
-	print ("Filtering out of scope domains")
-	removalCandidates = list()
-	for domain in domainSet:
-		if outscopeList and not inscopeList:
-			inScope = True
-		else:
-			inScope = False
+	if inscopeList or outscopeList:
+		print ("Filtering out of scope domains")
+		removalCandidates = list()
+		for domain in domainSet:
+			if outscopeList and not inscopeList:
+				inScope = True
+			else:
+				inScope = False
 
-		if inscopeList:
-			for scope in inscopeList:
-				m = re.search(scope, domain)
-				if m:
-					inScope = True
-					break
+			if inscopeList:
+				for scope in inscopeList:
+					m = re.search(scope, domain)
+					if m:
+						inScope = True
+						break
 
-		if outscopeList:
-			for scope in outscopeList:
-				m = re.search(scope, domain)
-				if m:
-					inScope = False
-					break
+			if outscopeList:
+				for scope in outscopeList:
+					m = re.search(scope, domain)
+					if m:
+						inScope = False
+						break
 
-		if not inScope:
-			removalCandidates.append(domain)
-	for removalDomain in removalCandidates:
-		domainSet.remove(removalDomain)
+			if not inScope:
+				removalCandidates.append(domain)
+		for removalDomain in removalCandidates:
+			domainSet.remove(removalDomain)
 
-print(domainSet)
+	print(domainSet)
+else:
+	print ("Skipping asn asset discovery")
 
 subdomainList = list()
 
