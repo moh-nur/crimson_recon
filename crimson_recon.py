@@ -201,11 +201,11 @@ if inscopeList or outscopeList:
 print("Filtered subdomain list")
 print(subdomainSet)
 
-companyDir = resultsDir+"/{name}"
+companyDir = resultsDir+"/"+name
 if not os.path.exists(companyDir):
     os.makedirs(companyDir)
 
-domainResults = companyDir+"/{name}_domains.txt"
+domainResults = companyDir+"/"+name+"_domains.txt"
 with open(domainResults, 'w') as f:
     for domain in domainSet:
         f.write("%s\n" % domain)
