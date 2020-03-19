@@ -147,14 +147,14 @@ else:
 
 subdomainList = list()
 
-# print ("passively scraping subdomains using amass enum")
-# amassProcess = subprocess.run([amassDir+"/amass enum -passive -d "+args.domain],
-# 					cwd=amassDir,
-# 					shell=True,
-#                      stdout=subprocess.PIPE, 
-#                      universal_newlines=True)
-# amassSubdomainList = amassProcess.stdout.split("\n")
-# subdomainList+=amassSubdomainList
+print ("passively scraping subdomains using amass enum")
+amassProcess = subprocess.run([amassDir+"/amass enum -passive -d "+args.domain],
+					cwd=amassDir,
+					shell=True,
+                     stdout=subprocess.PIPE, 
+                     universal_newlines=True)
+amassSubdomainList = amassProcess.stdout.split("\n")
+subdomainList+=amassSubdomainList
 
 print ("Brute forcing domain names using gobuster")
 process = subprocess.run(["gobuster dns -d "+args.domain+" -z -q -w "+wordlistFolder+"/subdomains-top1million-5000.txt"],
