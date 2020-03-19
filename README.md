@@ -17,6 +17,10 @@ Long term goal is to standarize the enumeration and filtering so that code can b
 
 ``~/tools/masscan/bin/masscan -iL [FILE] --rate 1500 -p0-65535 > masscan.txt ``
 
+###Use altdns to find premutations all subdomains
+
+``python3 ~/tools/altdns/altdns -i [FILE] -o permutations.txt -w ~/netsec/crimson_recon/wordlists/altdns_words.txt -r -s [NEWFILE]``
+
 ###Use EyeWitness to take snapshot of all subdomains
 
 ``~/tools/EyeWitness/EyeWitness.py -f [FILE] --web --proxy-ip 127.0.0.1 --proxy-port 8080``

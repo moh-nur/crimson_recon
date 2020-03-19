@@ -47,6 +47,7 @@ if not os.path.exists(companyDir):
     os.makedirs(companyDir)
 
 amassDir = str(pathlib.Path.home())+"/tools/amass"
+altdnsDir = str(pathlib.Path.home())+"/tools/altdns/altdns"
 if not args.noasn:
 	print ("Retrieving asn list")
 	process = subprocess.run([amassDir+"/amass intel -org "+name],
@@ -146,14 +147,14 @@ else:
 
 subdomainList = list()
 
-print ("passively scraping subdomains using amass enum")
-amassProcess = subprocess.run([amassDir+"/amass enum -passive -d "+args.domain],
-					cwd=amassDir,
-					shell=True,
-                     stdout=subprocess.PIPE, 
-                     universal_newlines=True)
-amassSubdomainList = amassProcess.stdout.split("\n")
-subdomainList+=amassSubdomainList
+# print ("passively scraping subdomains using amass enum")
+# amassProcess = subprocess.run([amassDir+"/amass enum -passive -d "+args.domain],
+# 					cwd=amassDir,
+# 					shell=True,
+#                      stdout=subprocess.PIPE, 
+#                      universal_newlines=True)
+# amassSubdomainList = amassProcess.stdout.split("\n")
+# subdomainList+=amassSubdomainList
 
 print ("Brute forcing domain names using gobuster")
 process = subprocess.run(["gobuster dns -d "+args.domain+" -z -q -w "+wordlistFolder+"/subdomains-top1million-5000.txt"],
@@ -205,15 +206,26 @@ companyDir = resultsDir+"/"+name
 if not os.path.exists(companyDir):
     os.makedirs(companyDir)
 
-domainResults = companyDir+"/"+name+"_domains.txt"
-with open(domainResults, 'w') as f:
-    for domain in domainSet:
-        f.write("%s\n" % domain)
+if not args.noasn:
+	domainResults = companyDir+"/"+name+"_domains.txt"
+	with open(domainResults, 'w') as f:
+	    for domain in domainSet:
+	        f.write("%s\n" % domain)
 
 subDomainResults = companyDir+"/"+name+"_subdomains.txt"
 with open(subDomainResults, 'w') as f:
     for subdomain in subdomainSet:
         f.write("%s\n" % subdomain)
+
+premutations = companyDir+"/"+name+"_premutations.txt"
+additionalsubDomains = companyDir+"/"+name+"_subdomains_altdns.txt"
+print ("Brute forcing additional subdomains using altdns premutations")
+process = subprocess.run(["python3 "+ altdnsDir +" -i " + subDomainResults +" -o "+ premutations + " -w " + wordlistFolder + "/altdns_words.txt -r -s " + additionalsubDomains],
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
+
+os.remove(premutations)
 
 ts = time.time()
 sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H:%M:%S - ')
