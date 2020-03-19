@@ -6,22 +6,22 @@ Long term goal is to standarize the enumeration and filtering so that code can b
 
 ## Useful linux commands
 
-###Use nmap to resolve all subdomains
+###Use nmap to resolve all subdomains (https://github.com/nmap/nmap)
 ``nmap -T5 -sL -n -oG resolved -iL "subDomain_List_fileName"``
 
 ###Grab all ip addresses from "resolved" file created by nmap
 
 ``cat resolved | grep ^Host | cut -d " " -f 2 > masscan.il``
 
-###Use masscan to check ports using file "masscan.il"
+###Use masscan to check ports using file "masscan.il" (https://github.com/robertdavidgraham/masscan)
 
 ``~/tools/masscan/bin/masscan -iL [FILE] --rate 1500 -p0-65535 > masscan.txt ``
 
-###Use altdns to find premutations all subdomains
+###Use altdns to find premutations all subdomains (https://github.com/infosec-au/altdns)
 
 ``python3 ~/tools/altdns/altdns -i [FILE] -o permutations.txt -w ~/netsec/crimson_recon/wordlists/altdns_words.txt -r -s [NEWFILE]``
 
-###Use EyeWitness to take snapshot of all subdomains
+###Use EyeWitness to take snapshot of all subdomains (https://github.com/FortyNorthSecurity/EyeWitness)
 
 ``~/tools/EyeWitness/EyeWitness.py -f [FILE] --web --proxy-ip 127.0.0.1 --proxy-port 8080``
 
