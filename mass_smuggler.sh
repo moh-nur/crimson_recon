@@ -11,6 +11,7 @@ rm -f ${outputFile}_https.txt
 
 sed 's/^/https:\/\//' ${input} > ${outputFile}_https.txt
 
-python3 $home/tools/pentest-tools/smuggler.py -u ${outputFile}_https.txt -v 1 -t 10 >> ${outputFile}_smuggler.txt
+#python3 $home/tools/pentest-tools/smuggler.py -u ${outputFile}_https.txt -v 1 -t 10 >> ${outputFile}_smuggler.txt
+python3 smuggler.py -u ${outputFile}_https.txt -v 1 -t 10 >> ${outputFile}_smuggler.txt
 
 

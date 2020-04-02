@@ -57,6 +57,7 @@ if not args.noasn:
 	                         universal_newlines=True)
 
 	asnList = process.stdout.split("\n")
+	asnList.remove("")
 	asnResults = companyDir+"/"+name+"_asns.txt"
 	with open(asnResults, 'w') as f:
 	    for asn in asnList:
@@ -226,6 +227,12 @@ process = subprocess.run(["python3 "+ altdnsDir +" -i " + subDomainResults +" -o
                          universal_newlines=True)
 
 os.remove(premutations)
+
+print ("Checking for http request smuggling")
+process = subprocess.run(["mass_smuggler.sh "+subDomainResults],
+						shell=True,
+                         stdout=subprocess.PIPE, 
+                         universal_newlines=True)
 
 ts = time.time()
 sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H:%M:%S - ')
