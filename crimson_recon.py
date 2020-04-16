@@ -229,7 +229,7 @@ process = subprocess.run(["python3 "+ altdnsDir +" -i " + subDomainResults +" -o
 os.remove(premutations)
 
 print ("Checking for http request smuggling")
-process = subprocess.run(["mass_smuggler.sh "+subDomainResults],
+process = subprocess.run(["./mass_smuggler.sh "+subDomainResults],
 						shell=True,
                          stdout=subprocess.PIPE, 
                          universal_newlines=True)
